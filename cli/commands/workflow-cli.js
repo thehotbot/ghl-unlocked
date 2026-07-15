@@ -20,7 +20,7 @@ function buildClient(cmd) {
 
   const locationId = rootOpts.location || profile.location_id;
 
-  return createApiClient({
+  const client = createApiClient({
     getToken: async () => {
       // For MVP: use stored JWT directly. Two-tier refresh wired in later.
       if (!profile.ghl_jwt) {
@@ -33,6 +33,8 @@ function buildClient(cmd) {
     },
     locationId,
   });
+
+  return { client, locationId };
 }
 
 export function registerWorkflowCommands(program) {
@@ -42,7 +44,7 @@ export function registerWorkflowCommands(program) {
     .command('list')
     .description('List all workflows')
     .action(async function() {
-      const client = buildClient(this);
+      const { client } = buildClient(this);
       const workflows = await listWorkflows(client);
       if (this.parent.parent.opts().json) {
         console.log(JSON.stringify(workflows, null, 2));
@@ -57,8 +59,8 @@ export function registerWorkflowCommands(program) {
     .command('get <id>')
     .description('Get full workflow detail including steps')
     .action(async function(id) {
-      const client = buildClient(this);
-      const workflow = await getWorkflow(client, id);
+      const { client, locationId } = buildClient(this);
+      const workflow = await getWorkflow(client, id, locationId);
       console.log(JSON.stringify(workflow, null, 2));
     });
 
@@ -66,8 +68,8 @@ export function registerWorkflowCommands(program) {
     .command('get-steps <id>')
     .description('Get workflow steps/actions only')
     .action(async function(id) {
-      const client = buildClient(this);
-      const steps = await getWorkflowSteps(client, id);
+      const { client, locationId } = buildClient(this);
+      const steps = await getWorkflowSteps(client, id, locationId);
       console.log(JSON.stringify(steps, null, 2));
     });
 
@@ -78,7 +80,7 @@ export function registerWorkflowCommands(program) {
     .requiredOption('--data <json>', 'Action data as JSON string')
     .option('--position <n>', 'Position in action list (0-indexed)', parseInt)
     .action(async function(workflowId, opts) {
-      const client = buildClient(this);
+      const { client, locationId } = buildClient(this);
       const actionData = {
         type: opts.type,
         data: JSON.parse(opts.data),
@@ -86,7 +88,7 @@ export function registerWorkflowCommands(program) {
       if (opts.position !== undefined) {
         actionData.position = opts.position;
       }
-      const result = await addAction(client, workflowId, actionData);
+      const result = await addAction(client, workflowId, actionData, locationId);
       console.log(JSON.stringify(result, null, 2));
     });
 }
