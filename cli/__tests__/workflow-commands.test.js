@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { listWorkflows, getWorkflow, getWorkflowSteps, addAction, saveWorkflow } from '../commands/workflows.js';
+import { listWorkflows, getWorkflow, getWorkflowSteps, addAction, saveWorkflow, createWorkflow } from '../commands/workflows.js';
 
 describe('workflow commands', () => {
   let mockClient;
@@ -166,6 +166,31 @@ describe('workflow commands', () => {
         type: 'nonexistent_type',
         data: {},
       }, 'LOC_ABC')).rejects.toThrow('Unknown action type');
+    });
+  });
+
+  describe('createWorkflow', () => {
+    it('POSTs to /workflow/{locationId} with name and status', async () => {
+      mockClient.post.mockResolvedValueOnce({ _id: 'new-wf-1', name: 'Test Flow', status: 'draft' });
+
+      const result = await createWorkflow(mockClient, 'Test Flow', 'LOC_ABC');
+
+      expect(mockClient.post).toHaveBeenCalledWith('/workflow/LOC_ABC', {
+        name: 'Test Flow',
+        status: 'draft',
+        type: 'workflow',
+        locationId: 'LOC_ABC',
+      });
+      expect(result._id).toBe('new-wf-1');
+    });
+
+    it('accepts published status', async () => {
+      mockClient.post.mockResolvedValueOnce({ _id: 'new-wf-2', status: 'published' });
+
+      await createWorkflow(mockClient, 'Live Flow', 'LOC_ABC', { status: 'published' });
+
+      const [, body] = mockClient.post.mock.calls[0];
+      expect(body.status).toBe('published');
     });
   });
 });

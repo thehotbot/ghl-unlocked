@@ -10,6 +10,17 @@ const LIST_ENDPOINT = '/workflows/';
 const WORKFLOW_ENDPOINT = (locationId, workflowId) =>
   `/workflow/${locationId}/${workflowId}`;
 
+const CREATE_ENDPOINT = (locationId) => `/workflow/${locationId}`;
+
+export async function createWorkflow(client, name, locationId, { status = 'draft' } = {}) {
+  return client.post(CREATE_ENDPOINT(locationId), {
+    name,
+    status,
+    type: 'workflow',
+    locationId,
+  });
+}
+
 export async function listWorkflows(client) {
   const data = await client.get(LIST_ENDPOINT);
   return data.workflows || [];
