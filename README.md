@@ -226,7 +226,7 @@ All requests require these headers:
 The installer copies a Claude Code skill to `~/.claude/skills/ghl-unlocked.md`. This lets Claude assist with workflow operations during conversations:
 
 ```
-"List all workflows in iCabinetry and show me the steps in the Wipe Contact workflow"
+"List all workflows and show me the steps in the onboarding workflow"
 ```
 
 The skill teaches Claude the available CLI commands and GHL API patterns.
