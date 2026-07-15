@@ -1,5 +1,6 @@
-import { buildClient } from '../lib/client-builder.js';
-import { listWorkflows, getWorkflow, getWorkflowSteps, addAction, createWorkflow } from './workflows.js';
+import { buildClient, buildPublicClient } from '../lib/client-builder.js';
+import { listWorkflows, getWorkflow, getWorkflowSteps, addAction, createWorkflow, publishWorkflow } from './workflows.js';
+import { enrollInWorkflow, removeFromWorkflow } from './contacts.js';
 
 export function registerWorkflowCommands(program) {
   const wf = program.command('wf').description('Workflow operations');
@@ -68,5 +69,49 @@ export function registerWorkflowCommands(program) {
       }
       const result = await addAction(client, workflowId, actionData, locationId);
       console.log(JSON.stringify(result, null, 2));
+    });
+
+  wf
+    .command('publish <id>')
+    .description('Publish a workflow (adds trigger if missing)')
+    .action(async function(id) {
+      const { client, locationId } = buildClient(this);
+      const result = await publishWorkflow(client, id, locationId, true);
+      console.log(`Workflow published: ${result._id || result.id || id}`);
+    });
+
+  wf
+    .command('unpublish <id>')
+    .description('Unpublish a workflow (set to draft)')
+    .action(async function(id) {
+      const { client, locationId } = buildClient(this);
+      const result = await publishWorkflow(client, id, locationId, false);
+      console.log(`Workflow set to draft: ${result._id || result.id || id}`);
+    });
+
+  wf
+    .command('enroll <workflowId>')
+    .description('Add a contact to a workflow')
+    .requiredOption('--contact <id>', 'Contact ID')
+    .action(async function(workflowId, opts) {
+      const { client } = buildPublicClient(this);
+      const now = new Date();
+      const offset = -now.getTimezoneOffset();
+      const sign = offset >= 0 ? '+' : '-';
+      const pad = n => String(Math.abs(n)).padStart(2, '0');
+      const tz = sign + pad(Math.floor(offset / 60)) + ':' + pad(offset % 60);
+      const eventTime = now.toISOString().slice(0, 19) + tz;
+      const result = await enrollInWorkflow(client, opts.contact, workflowId, eventTime);
+      console.log('Contact enrolled in workflow.');
+    });
+
+  wf
+    .command('unenroll <workflowId>')
+    .description('Remove a contact from a workflow')
+    .requiredOption('--contact <id>', 'Contact ID')
+    .action(async function(workflowId, opts) {
+      const { client } = buildPublicClient(this);
+      await removeFromWorkflow(client, opts.contact, workflowId);
+      console.log('Contact removed from workflow.');
     });
 }

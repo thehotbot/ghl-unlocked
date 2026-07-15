@@ -49,3 +49,11 @@ export async function getContactTasks(client, id) {
 export async function createContactTask(client, id, data) {
   return client.post(`/contacts/${id}/tasks`, data);
 }
+
+export async function enrollInWorkflow(client, contactId, workflowId, eventStartTime) {
+  return client.post(`/contacts/${contactId}/workflow/${workflowId}`, { eventStartTime });
+}
+
+export async function removeFromWorkflow(client, contactId, workflowId) {
+  return client.delete(`/contacts/${contactId}/workflow/${workflowId}`);
+}

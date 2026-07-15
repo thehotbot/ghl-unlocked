@@ -35,6 +35,30 @@ export async function getWorkflowSteps(client, workflowId, locationId) {
   return workflow.workflowData?.templates || [];
 }
 
+export async function publishWorkflow(client, workflowId, locationId, publish = true) {
+  const workflow = await getWorkflow(client, workflowId, locationId);
+  workflow.status = publish ? 'published' : 'draft';
+
+  // Ensure a trigger exists when publishing
+  if (publish && (!workflow.workflowData.triggers || workflow.workflowData.triggers.length === 0)) {
+    const triggerId = crypto.randomUUID();
+    workflow.workflowData.triggers = [{
+      id: triggerId,
+      type: 'contact_changed',
+      name: 'Added to Workflow',
+      filters: [],
+    }];
+    // Wire first template to trigger
+    const templates = workflow.workflowData.templates || [];
+    const first = templates.find(t => t.order === 0) || templates[0];
+    if (first) {
+      first.parentKey = triggerId;
+    }
+  }
+
+  return saveWorkflow(client, workflow, locationId);
+}
+
 export async function saveWorkflow(client, workflow, locationId, { createdSteps = [], deletedSteps = [], modifiedSteps = [] } = {}) {
   const body = {
     ...workflow,
