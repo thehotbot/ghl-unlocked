@@ -2,6 +2,7 @@
 import { Command } from 'commander';
 import { registerAuthCommands } from './commands/auth.js';
 import { registerWorkflowCommands } from './commands/workflow-cli.js';
+import { registerLocationCommands } from './commands/location-cli.js';
 
 const program = new Command();
 
@@ -18,5 +19,6 @@ program
 
 registerAuthCommands(program);
 registerWorkflowCommands(program);
+registerLocationCommands(program);
 
 program.parse();
