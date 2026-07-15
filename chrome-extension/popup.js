@@ -31,8 +31,8 @@ chrome.runtime.sendMessage({ action: 'getGhlJwt' }, (response) => {
 // 2. Ask content.js for Firebase refresh token + metadata
 chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
   const tab = tabs[0];
-  if (!tab?.url?.includes('gohighlevel.com') && !tab?.url?.includes('leadconnectorhq.com')) {
-    firebaseStatusEl.textContent = 'Not on GHL — navigate to app.gohighlevel.com';
+  if (!tab?.id) {
+    firebaseStatusEl.textContent = 'No active tab found';
     firebaseStatusEl.className = 'token-status expired';
     return;
   }

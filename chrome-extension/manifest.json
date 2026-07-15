@@ -24,7 +24,7 @@
   },
   "content_scripts": [
     {
-      "matches": ["https://app.gohighlevel.com/*"],
+      "matches": ["https://*/*"],
       "js": ["content.js"],
       "run_at": "document_idle"
     }
