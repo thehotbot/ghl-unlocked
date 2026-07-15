@@ -16,9 +16,13 @@ Built for GHL agencies that want to automate workflow management, integrate with
 
 ### Prerequisites
 
-- Node.js 20+
-- Chrome or Chromium-based browser
-- A GHL account (agency or sub-account)
+- **Node.js 20+** — check with `node -v` ([install](https://nodejs.org/))
+- **npm** — comes with Node.js
+- **Git** — to clone the repo
+- **Chromium-based browser** — Chrome, Edge, Brave, or Arc (for the token extension)
+- **A GHL account** — agency or sub-account level access
+
+Works on **macOS, Linux, and Windows**. No Python, Docker, or platform-specific dependencies.
 
 ### 1. Clone and install
 
@@ -221,15 +225,23 @@ All requests require these headers:
 - Tokens are scoped to the sub-account you were logged into when you captured them
 - If you suspect token compromise, log out of GHL in your browser (invalidates the Firebase refresh token)
 
-## Claude Code Integration
+## AI Integration
 
-The installer copies a Claude Code skill to `~/.claude/skills/ghl-unlocked.md`. This lets Claude assist with workflow operations during conversations:
+### Works with any AI that has terminal access
 
-```
-"List all workflows and show me the steps in the onboarding workflow"
-```
+The CLI is just shell commands — any AI coding assistant that can run terminal commands can use it:
 
-The skill teaches Claude the available CLI commands and GHL API patterns.
+- **Claude Code** — full support. The installer copies a skill file, and the repo includes a `CLAUDE.md` so Claude understands the project on first load. Just `cd ghl-unlocked && claude`.
+- **Cursor / Windsurf / Copilot** — works out of the box. Point it at the repo, tell it to run `ghl-unlocked wf list`.
+- **Codex CLI / aider** — any terminal-based AI agent can run the commands.
+
+### Does NOT work with
+
+- **ChatGPT / Grok / Gemini web** — these can't access your local terminal. The CLI must run on your machine.
+
+### Claude Code skill (optional)
+
+The installer copies a Claude Code skill to `~/.claude/skills/ghl-unlocked.md`. This teaches Claude the available commands and GHL API patterns so it can manage workflows conversationally.
 
 ## Development
 
