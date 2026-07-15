@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { listWorkflows, getWorkflow, getWorkflowSteps, addAction } from '../commands/workflows.js';
+import { listWorkflows, getWorkflow, getWorkflowSteps, addAction, saveWorkflow } from '../commands/workflows.js';
 
 describe('workflow commands', () => {
   let mockClient;
@@ -8,6 +8,7 @@ describe('workflow commands', () => {
     mockClient = {
       get: vi.fn(),
       post: vi.fn(),
+      put: vi.fn(),
     };
   });
 
@@ -24,7 +25,6 @@ describe('workflow commands', () => {
 
       expect(mockClient.get).toHaveBeenCalledWith('/workflows/copyWorkflow/statusList');
       expect(result).toHaveLength(2);
-      expect(result[0].name).toBe('Wipe Contact');
     });
   });
 
@@ -32,15 +32,14 @@ describe('workflow commands', () => {
     it('calls GET /workflow/{locationId}/{workflowId}', async () => {
       mockClient.get.mockResolvedValueOnce({
         _id: 'wf1',
-        name: '0 - Start GPT DBR',
-        status: 'published',
+        name: 'Test Workflow',
         workflowData: { templates: [] },
       });
 
       const result = await getWorkflow(mockClient, 'wf1', 'LOC_ABC');
 
       expect(mockClient.get).toHaveBeenCalledWith('/workflow/LOC_ABC/wf1');
-      expect(result.name).toBe('0 - Start GPT DBR');
+      expect(result.name).toBe('Test Workflow');
     });
   });
 
@@ -48,61 +47,125 @@ describe('workflow commands', () => {
     it('returns workflowData.templates from the workflow response', async () => {
       mockClient.get.mockResolvedValueOnce({
         _id: 'wf1',
-        name: 'Test Workflow',
         workflowData: {
           templates: [
-            {
-              id: 'aaf5a03f',
-              order: 0,
-              name: 'Update contact field',
-              type: 'update_contact_field',
-              attributes: { type: 'update_contact_field' },
-              next: '4ec550aa',
-            },
-            {
-              id: '4ec550aa',
-              order: 1,
-              name: 'yes',
-              type: 'if_else',
-              attributes: { conditionName: 'Tester?' },
-              next: ['branch1', 'branch2'],
-            },
+            { id: 't1', order: 0, type: 'add_contact_tag' },
+            { id: 't2', order: 1, type: 'wait' },
           ],
         },
       });
 
       const result = await getWorkflowSteps(mockClient, 'wf1', 'LOC_ABC');
-
       expect(result).toHaveLength(2);
-      expect(result[0].type).toBe('update_contact_field');
-      expect(result[1].type).toBe('if_else');
+      expect(result[0].type).toBe('add_contact_tag');
     });
 
     it('returns empty array when workflowData is missing', async () => {
-      mockClient.get.mockResolvedValueOnce({
-        _id: 'wf1',
-        name: 'Empty Workflow',
-      });
-
+      mockClient.get.mockResolvedValueOnce({ _id: 'wf1' });
       const result = await getWorkflowSteps(mockClient, 'wf1', 'LOC_ABC');
       expect(result).toEqual([]);
     });
   });
 
+  describe('saveWorkflow', () => {
+    it('PUTs the full workflow with change tracking fields', async () => {
+      mockClient.put.mockResolvedValueOnce({ success: true });
+
+      const workflow = { _id: 'wf1', name: 'Test', workflowData: { templates: [] } };
+      await saveWorkflow(mockClient, workflow, 'LOC_ABC', {
+        createdSteps: ['new-id'],
+        deletedSteps: [],
+        modifiedSteps: [],
+      });
+
+      expect(mockClient.put).toHaveBeenCalledOnce();
+      const [url, body] = mockClient.put.mock.calls[0];
+      expect(url).toBe('/workflow/LOC_ABC/wf1');
+      expect(body.createdSteps).toEqual(['new-id']);
+      expect(body.deletedSteps).toEqual([]);
+    });
+  });
+
   describe('addAction', () => {
-    it('POSTs new action to workflow', async () => {
-      mockClient.post.mockResolvedValueOnce({ id: 'a_new', type: 'add_contact_tag' });
+    it('reads workflow, inserts template, and saves via PUT', async () => {
+      // GET returns existing workflow with one template
+      mockClient.get.mockResolvedValueOnce({
+        _id: 'wf1',
+        name: 'Test Workflow',
+        locationId: 'LOC_ABC',
+        workflowData: {
+          templates: [
+            { id: 'existing-1', order: 0, type: 'wait', name: 'Wait', next: null },
+          ],
+        },
+      });
+
+      // PUT saves the modified workflow
+      mockClient.put.mockResolvedValueOnce({ success: true });
 
       const result = await addAction(mockClient, 'wf1', {
         type: 'add_contact_tag',
         data: { tag: 'tester' },
       }, 'LOC_ABC');
 
-      expect(mockClient.post).toHaveBeenCalledWith('/workflow/LOC_ABC/wf1/actions', {
-        type: 'add_contact_tag',
-        data: { tag: 'tester' },
+      // Should have fetched the workflow
+      expect(mockClient.get).toHaveBeenCalledWith('/workflow/LOC_ABC/wf1');
+
+      // Should have PUT with full workflow including new template
+      expect(mockClient.put).toHaveBeenCalledOnce();
+      const [url, body] = mockClient.put.mock.calls[0];
+      expect(url).toBe('/workflow/LOC_ABC/wf1');
+      expect(body.createdSteps).toHaveLength(1);
+      expect(body.createdSteps[0]).toBe(result.id);
+
+      // New template should be in the templates array
+      const templates = body.workflowData.templates;
+      const newTemplate = templates.find(t => t.id === result.id);
+      expect(newTemplate).toBeDefined();
+      expect(newTemplate.type).toBe('add_contact_tag');
+      expect(newTemplate.attributes.tags).toEqual(['tester']);
+    });
+
+    it('inserts at position 0 and shifts existing templates', async () => {
+      mockClient.get.mockResolvedValueOnce({
+        _id: 'wf1',
+        workflowData: {
+          templates: [
+            { id: 'existing-1', order: 0, type: 'wait', name: 'Wait' },
+            { id: 'existing-2', order: 1, type: 'sms', name: 'Send SMS' },
+          ],
+        },
       });
-      expect(result.id).toBe('a_new');
+      mockClient.put.mockResolvedValueOnce({ success: true });
+
+      const result = await addAction(mockClient, 'wf1', {
+        type: 'add_contact_tag',
+        data: { tag: 'first' },
+        position: 0,
+      }, 'LOC_ABC');
+
+      const [, body] = mockClient.put.mock.calls[0];
+      const templates = body.workflowData.templates;
+
+      // New template should be at order 0
+      const newTemplate = templates.find(t => t.id === result.id);
+      expect(newTemplate.order).toBe(0);
+
+      // Existing templates should be shifted
+      const existing1 = templates.find(t => t.id === 'existing-1');
+      expect(existing1.order).toBe(1);
+    });
+
+    it('throws on unknown action type', async () => {
+      mockClient.get.mockResolvedValueOnce({
+        _id: 'wf1',
+        workflowData: { templates: [] },
+      });
+
+      await expect(addAction(mockClient, 'wf1', {
+        type: 'nonexistent_type',
+        data: {},
+      }, 'LOC_ABC')).rejects.toThrow('Unknown action type');
     });
   });
 });

@@ -39,17 +39,20 @@
 - **Key types seen:** `update_contact_field`, `if_else`, `wait`, `add_contact_tag`, `remove_contact_tag`, `sms`, `create_opportunity`, `drip`, `add_to_workflow`, `goto`, `remove_from_workflow`, `internal_notification`
 - **Status:** Confirmed
 
-### Add Action
+### Save Workflow (Add/Update/Delete Actions)
+- **Method:** PUT
+- **URL:** `https://backend.leadconnectorhq.com/workflow/{locationId}/{workflowId}` (same as GET)
+- **Request Body:** Full workflow object including `workflowData.templates[]` with ALL templates
+- **Change tracking fields in body:**
+  - `createdSteps: ["new-uuid"]` — IDs of newly added templates
+  - `deletedSteps: ["removed-uuid"]` — IDs of removed templates
+  - `modifiedSteps: ["changed-uuid"]` — IDs of modified templates
+- **Notes:** GHL uses a read-modify-write pattern. There is no endpoint to add/remove individual actions. The entire workflow (including all templates) is PUT back. A `validate-assets` POST runs first (optional, at `/workflow/{locationId}/validate-assets`).
+- **Status:** Confirmed
+
+### Validate Workflow Assets
 - **Method:** POST
-- **URL:** TBD — capture by adding an action in the GHL workflow editor
-- **Status:** Pending
-
-### Update Action
-- **Method:** PUT/PATCH
-- **URL:** TBD
-- **Status:** Pending
-
-### Delete Action
-- **Method:** DELETE
-- **URL:** TBD
-- **Status:** Pending
+- **URL:** `https://backend.leadconnectorhq.com/workflow/{locationId}/validate-assets`
+- **Request Body:** `{ templates: [...], triggers: [...], companyId: "..." }`
+- **Notes:** Runs before save. Validates all templates and triggers. Not required for save to succeed.
+- **Status:** Confirmed
