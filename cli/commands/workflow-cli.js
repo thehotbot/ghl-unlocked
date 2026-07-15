@@ -1,5 +1,5 @@
 import { buildClient, buildPublicClient } from '../lib/client-builder.js';
-import { listWorkflows, getWorkflow, getWorkflowSteps, addAction, createWorkflow, publishWorkflow } from './workflows.js';
+import { listWorkflows, getWorkflow, getWorkflowSteps, addAction, createWorkflow, publishWorkflow, deleteWorkflow, cloneWorkflow, getWorkflowErrors } from './workflows.js';
 import { enrollInWorkflow, removeFromWorkflow } from './contacts.js';
 
 export function registerWorkflowCommands(program) {
@@ -113,5 +113,37 @@ export function registerWorkflowCommands(program) {
       const { client } = buildPublicClient(this);
       await removeFromWorkflow(client, opts.contact, workflowId);
       console.log('Contact removed from workflow.');
+    });
+
+  wf
+    .command('delete <id>')
+    .description('Delete a workflow')
+    .action(async function(id) {
+      const { client, locationId } = buildClient(this);
+      await deleteWorkflow(client, id, locationId);
+      console.log(`Workflow deleted: ${id}`);
+    });
+
+  wf
+    .command('clone <id>')
+    .description('Clone a workflow (with remapped step IDs)')
+    .option('--name <name>', 'Name for the cloned workflow')
+    .action(async function(id, opts) {
+      const { client, locationId } = buildClient(this);
+      const result = await cloneWorkflow(client, id, locationId, opts.name);
+      if (this.parent.parent.opts().json) {
+        console.log(JSON.stringify(result, null, 2));
+      } else {
+        console.log(`Workflow cloned: ${result.id || result._id}`);
+      }
+    });
+
+  wf
+    .command('errors')
+    .description('Get workflow error count')
+    .action(async function() {
+      const { client, locationId } = buildClient(this);
+      const result = await getWorkflowErrors(client, locationId);
+      console.log(JSON.stringify(result, null, 2));
     });
 }

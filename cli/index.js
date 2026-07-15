@@ -17,6 +17,8 @@ import { registerMediaCommands } from './commands/media-cli.js';
 import { registerEmailsCommands } from './commands/emails-cli.js';
 import { registerSurveysCommands } from './commands/surveys-cli.js';
 import { registerObjectsCommands } from './commands/objects-cli.js';
+import { registerFunnelsCommands } from './commands/funnels-cli.js';
+import { registerFormsInternalCommands } from './commands/forms-internal-cli.js';
 
 const program = new Command();
 
@@ -48,5 +50,7 @@ registerMediaCommands(program);
 registerEmailsCommands(program);
 registerSurveysCommands(program);
 registerObjectsCommands(program);
+registerFunnelsCommands(program);
+registerFormsInternalCommands(program);
 
 program.parse();
