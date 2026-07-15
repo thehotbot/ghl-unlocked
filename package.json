@@ -1,0 +1,23 @@
+{
+  "name": "ghl-unlocked",
+  "version": "0.1.0",
+  "description": "Full GHL workflow access for Claude and CLI via internal API",
+  "type": "module",
+  "bin": {
+    "ghl-unlocked": "./cli/index.js"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "commander": "^13.0.0"
+  },
+  "devDependencies": {
+    "vitest": "^2.0.0"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "license": "MIT"
+}
