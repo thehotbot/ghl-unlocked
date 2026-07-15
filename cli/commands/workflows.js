@@ -5,7 +5,7 @@
 
 import crypto from 'crypto';
 
-const LIST_ENDPOINT = '/workflows/copyWorkflow/statusList';
+const LIST_ENDPOINT = '/workflows/';
 
 const WORKFLOW_ENDPOINT = (locationId, workflowId) =>
   `/workflow/${locationId}/${workflowId}`;

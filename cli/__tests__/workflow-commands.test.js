@@ -23,7 +23,7 @@ describe('workflow commands', () => {
 
       const result = await listWorkflows(mockClient);
 
-      expect(mockClient.get).toHaveBeenCalledWith('/workflows/copyWorkflow/statusList');
+      expect(mockClient.get).toHaveBeenCalledWith('/workflows/');
       expect(result).toHaveLength(2);
     });
   });
