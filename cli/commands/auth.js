@@ -50,9 +50,9 @@ export function registerAuthCommands(program) {
   auth
     .command('set-pit <token>')
     .description('Set or update PIT (Private Integration Token) for a profile')
-    .action((token, cmd) => {
+    .action(function(token) {
       const configPath = getConfigPath();
-      const profileName = cmd.parent.parent.opts().profile || 'default';
+      const profileName = this.parent.parent.opts().profile || 'default';
       const config = readConfig(configPath);
       const existing = config.profiles[profileName];
 

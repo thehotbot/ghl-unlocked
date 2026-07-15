@@ -43,7 +43,12 @@ ghl-unlocked auth add --pit <your-token> --location <your-location-id>
 
 **Option B: Full access (adds workflow CRUD via internal API)**
 
-1. Load the Chrome extension: `chrome://extensions` > Developer mode > Load unpacked > select `chrome-extension/`
+1. Load the Chrome extension:
+   - Open `chrome://extensions` and enable **Developer mode** (top-right toggle)
+   - Click **Load unpacked** and navigate to `~/.ghl-unlocked/chrome-extension/`
+   - **Mac:** In the file picker, press **Cmd+Shift+G** and paste: `~/.ghl-unlocked/chrome-extension`
+   - **Windows:** Paste into the address bar: `%USERPROFILE%\.ghl-unlocked\chrome-extension`
+   - **Linux:** Press **Ctrl+L** and paste the path
 2. Log into GHL, click the extension icon, click "Copy Tokens"
 3. Run:
 
