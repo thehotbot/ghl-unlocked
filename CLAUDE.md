@@ -1,6 +1,6 @@
 # GHL Unlocked
 
-CLI + Chrome extension for full GoHighLevel access. 17 command domains, 80+ operations. Wraps both the public API v2 and the internal API (for workflow CRUD that the public API doesn't expose).
+CLI + Chrome extension for full GoHighLevel access. 19 command domains, 100+ operations, 55+ workflow action types. Wraps both the public API v2 and the internal API (for workflow CRUD, funnels, and forms that the public API doesn't expose).
 
 ## Setup
 
@@ -61,12 +61,25 @@ cal slots <calId> --start <date> --end <date> [--duration <min>] [--timezone]
 cal book --calendar <id> --contact <id> --title <t> --start <iso> --end <iso>
 cal cancel <appointmentId>
 
-# Workflows (JWT — internal API)
-wf list
-wf get|get-steps <id>
+# Workflows (JWT -- internal API)
+wf list | get|get-steps <id>
 wf create <name> [--status draft|published]
+wf clone <id> [--name <n>]         # Clone with remapped step IDs
+wf delete <id>
+wf publish|unpublish <id>          # Publish adds trigger if missing
+wf enroll <wfId> --contact <cid>   # Add contact to workflow
+wf unenroll <wfId> --contact <cid>
+wf errors                          # Workflow error count
 wf add-action <wfId> --type <type> --data '<json>' [--position <n>]
-# Action types: add_contact_tag, remove_contact_tag, update_contact_field, wait, sms, webhook
+# 55+ action types: sms, email, wait, if_else, custom_code, add_contact_tag,
+# internal_create_opportunity, assign_user, webhook, slack_message, google_sheets,
+# ai_prompt, voicemail, whatsapp, and 40+ more (see README for full list)
+
+# Funnels (JWT -- internal API)
+funnels list | get <id> | pages <funnelId>
+
+# Forms (JWT -- internal API)
+forms list | get <id>
 
 # Location (PIT)
 loc get | tags | fields [--model] | values
@@ -136,7 +149,7 @@ Each domain has two files: `{domain}.js` (API functions) and `{domain}-cli.js` (
 ## Testing
 
 ```bash
-npm test          # 74 tests across 15 test files
+npm test          # 76 tests across 16 test files
 ```
 
 ## Rules

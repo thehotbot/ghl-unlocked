@@ -1,16 +1,17 @@
 # GHL Unlocked
 
-Full access to GoHighLevel from the command line. **17 command domains, 80+ operations** — contacts, pipelines, workflows, calendars, invoices, and more.
+Full access to GoHighLevel from the command line. **19 command domains, 100+ operations, 55+ workflow action types** -- contacts, pipelines, workflows, funnels, calendars, invoices, and more.
 
-What makes this different: workflow CRUD that the official API doesn't expose, plus the entire public API surface in one CLI. Built for GHL agencies, AI agents, and power users.
+What makes this different: workflow CRUD that the official API doesn't expose (create, clone, delete, add actions, publish, enroll contacts), funnel/form access, plus the entire public API surface in one CLI. Built for GHL agencies, AI agents, and power users.
 
 ## What You Get
 
-- **17 command domains** — contacts, opportunities, conversations, calendar, workflows, invoices, estimates, products, payments, blog, social, media, emails, surveys, custom objects, location settings
-- **Workflow deep access** — list, inspect steps, create, add actions (internal API — not available in official API)
+- **19 command domains** -- contacts, opportunities, conversations, calendar, workflows, funnels, forms, invoices, estimates, products, payments, blog, social, media, emails, surveys, custom objects, location settings, auth
+- **Workflow deep access** -- list, inspect steps, create, clone, delete, publish, add 55+ action types, enroll contacts (internal API, not available in official API)
+- **Funnel and form access** -- list funnels, inspect pages, list forms (internal API)
 - **Chrome extension** for token capture (works on white-label domains)
-- **Two-tier auth** — PIT for public API, JWT for internal API, auto-refresh via Firebase
-- **AI-ready** — JSON output, pipe to `jq`, works with Claude Code, Cursor, Codex CLI
+- **Two-tier auth** -- PIT for public API, JWT for internal API, auto-refresh via Firebase
+- **AI-ready** -- JSON output, pipe to `jq`, works with Claude Code, Cursor, Codex CLI
 
 ## Quick Start
 
@@ -119,16 +120,58 @@ ghl-unlocked cal cancel <appointmentId>
 ### Workflows (Internal API)
 
 ```bash
+# CRUD
 ghl-unlocked wf list                                # List all workflows
 ghl-unlocked wf get <id>                            # Full workflow JSON
 ghl-unlocked wf get-steps <id>                      # Just the action steps
 ghl-unlocked wf create "My Workflow"                # Create (draft)
-ghl-unlocked wf create "Live Flow" --status published
-ghl-unlocked wf add-action <wfId> --type add_contact_tag --data '{"tag":"hot-lead"}'
+ghl-unlocked wf clone <id> --name "Copy of Flow"    # Clone with remapped IDs
+ghl-unlocked wf delete <id>                         # Delete a workflow
+ghl-unlocked wf errors                              # Workflow error count
+
+# Lifecycle
+ghl-unlocked wf publish <id>                        # Publish (adds trigger if missing)
+ghl-unlocked wf unpublish <id>                      # Set to draft
+ghl-unlocked wf enroll <wfId> --contact <cid>       # Add contact to workflow
+ghl-unlocked wf unenroll <wfId> --contact <cid>     # Remove contact
+
+# Add actions
+ghl-unlocked wf add-action <wfId> --type sms --data '{"body":"Hello!"}'
+ghl-unlocked wf add-action <wfId> --type email --data '{"subject":"Hi","html":"<p>Hello</p>"}'
+ghl-unlocked wf add-action <wfId> --type if_else --data '{"conditions":[{"operator":"contains","field":"contact.tags","value":"vip"}]}'
+ghl-unlocked wf add-action <wfId> --type internal_create_opportunity --data '{"pipeline":"<pid>","stage":"<sid>","value":5000}'
+ghl-unlocked wf add-action <wfId> --type custom_code --data '{"code":"return {result: contact.first_name}"}'
 ghl-unlocked wf add-action <wfId> --type wait --data '{"value":5,"unit":"minutes"}' --position 0
 ```
 
-**Supported action types:** `add_contact_tag`, `remove_contact_tag`, `update_contact_field`, `wait`, `sms`, `webhook`
+**55+ supported action types:**
+
+| Category | Types |
+|----------|-------|
+| Communication | `sms`, `email`, `voicemail`, `manual_call`, `whatsapp`, `facebook_messenger`, `instagram_dm`, `gmb_message`, `live_chat_message`, `internal_notification`, `conversation_ai` |
+| Contact | `add_contact_tag`, `remove_contact_tag`, `update_contact_field`, `create_contact`, `find_contact`, `delete_contact`, `assign_user`, `remove_assigned_user`, `add_note`, `add_task`, `copy_contact`, `edit_conversation`, `set_dnd`, `add_contact_to_dnd`, `remove_contact_from_dnd` |
+| Flow control | `wait`, `if_else`, `goto`, `add_to_workflow`, `remove_from_workflow`, `goal_event`, `end`, `split`, `drip`, `custom_code`, `math_operation` |
+| Pipeline | `internal_create_opportunity`, `internal_update_opportunity`, `find_opportunity`, `delete_opportunity`, `remove_opportunity` |
+| Integrations | `webhook`, `slack_message`, `google_sheets`, `fb_conversion_api`, `stripe_one_time_charge` |
+| AI | `ai_prompt`, `conversation_ai` |
+| Appointments | `update_appointment_status`, `booking_link` |
+| IVR | `ivr_gather_input`, `ivr_play_message`, `ivr_connect_call`, `ivr_end_call` |
+| Other | `send_invoice`, `send_review_request`, `course_grant_offer`, `course_revoke_offer` |
+
+### Funnels (Internal API)
+
+```bash
+ghl-unlocked funnels list                           # List all funnels/sites
+ghl-unlocked funnels get <id>                       # Funnel detail (domain, tracking, steps)
+ghl-unlocked funnels pages <funnelId>               # List pages in a funnel
+```
+
+### Forms (Internal API)
+
+```bash
+ghl-unlocked forms list                             # List all forms
+ghl-unlocked forms get <id>                         # Form detail
+```
 
 ### Invoices
 
@@ -296,7 +339,7 @@ GHL Unlocked uses two APIs:
 | **Public API v2** | `services.leadconnectorhq.com` | PIT (never expires) | Contacts, opps, calendar, invoices, etc. |
 | **Internal API** | `backend.leadconnectorhq.com` | Session JWT (auto-refreshes) | Workflow CRUD, step inspection |
 
-**Most users only need a PIT** — it covers 15 of 17 command domains. The Chrome extension + JWT is only needed for workflow deep access (`wf get-steps`, `wf add-action`, `wf create`).
+**Most users only need a PIT** -- it covers 16 of 19 command domains. The Chrome extension + JWT is only needed for workflow deep access, funnels, and forms.
 
 ## Security
 
@@ -319,7 +362,7 @@ Does NOT work with ChatGPT/Grok/Gemini web (no terminal access).
 ## Development
 
 ```bash
-npm test              # 74 tests
+npm test              # 76 tests
 npm run test:watch
 ```
 
