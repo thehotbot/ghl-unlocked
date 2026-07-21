@@ -1,6 +1,7 @@
 import { readConfig, getProfile, updateProfileField, FIREBASE_API_KEY } from './config.js';
 import { createApiClient } from './api-client.js';
 import { createPublicApiClient } from './public-api-client.js';
+import { createAuditApiClient } from './audit-api-client.js';
 import { createTokenService } from './token-service.js';
 import * as firebase from './firebase.js';
 
@@ -97,5 +98,37 @@ export function buildPublicClient(cmd) {
     locationId,
   });
 
+  return { client, locationId };
+}
+
+/**
+ * Build audit API client (services.leadconnectorhq.com/audit)
+ * Used for: audit log search (contact/opportunity change history)
+ * Auth: raw Firebase ID token via `token-id` header — NOT a PIT, NOT the
+ *       exchanged GHL session JWT (both return 401 on this endpoint).
+ *       Minted fresh from the stored Firebase refresh token per invocation.
+ */
+export function buildAuditClient(cmd) {
+  const { profile, profileName, locationId, configPath } = resolveProfile(cmd);
+
+  if (!profile.firebase_refresh_token) {
+    console.error(
+      'No Firebase token configured for this profile.\n' +
+      'Run: ghl-unlocked auth refresh — open GHL and re-copy tokens from the Chrome extension.'
+    );
+    process.exit(1);
+  }
+
+  let cachedIdToken = null;
+  const getIdToken = async () => {
+    if (cachedIdToken) return cachedIdToken;
+    const fb = await firebase.exchangeRefreshToken(profile.firebase_refresh_token, FIREBASE_API_KEY);
+    // Persist potentially rotated refresh token
+    updateProfileField(profileName, 'firebase_refresh_token', fb.refresh_token, configPath);
+    cachedIdToken = fb.id_token;
+    return cachedIdToken;
+  };
+
+  const client = createAuditApiClient({ getIdToken, locationId });
   return { client, locationId };
 }

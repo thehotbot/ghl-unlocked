@@ -19,13 +19,14 @@ import { registerSurveysCommands } from './commands/surveys-cli.js';
 import { registerObjectsCommands } from './commands/objects-cli.js';
 import { registerFunnelsCommands } from './commands/funnels-cli.js';
 import { registerFormsInternalCommands } from './commands/forms-internal-cli.js';
+import { registerAuditCommands } from './commands/audit-cli.js';
 
 const program = new Command();
 
 program
   .name('ghl-unlocked')
   .description('Full GHL access — workflows, contacts, pipelines, and more')
-  .version('0.2.0');
+  .version('0.4.0');
 
 // Global flags
 program
@@ -52,5 +53,6 @@ registerSurveysCommands(program);
 registerObjectsCommands(program);
 registerFunnelsCommands(program);
 registerFormsInternalCommands(program);
+registerAuditCommands(program);
 
 program.parse();

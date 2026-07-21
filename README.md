@@ -1,12 +1,12 @@
 # GHL Unlocked
 
-Full access to GoHighLevel from the command line. **19 command domains, 100+ operations, 55+ workflow action types** -- contacts, pipelines, workflows, funnels, calendars, invoices, and more.
+Full access to GoHighLevel from the command line. **20 command domains, 100+ operations, 55+ workflow action types** -- contacts, pipelines, workflows, funnels, calendars, invoices, audit logs, and more.
 
 What makes this different: workflow CRUD that the official API doesn't expose (create, clone, delete, add actions, publish, enroll contacts), funnel/form access, plus the entire public API surface in one CLI. Built for GHL agencies, AI agents, and power users.
 
 ## What You Get
 
-- **19 command domains** -- contacts, opportunities, conversations, calendar, workflows, funnels, forms, invoices, estimates, products, payments, blog, social, media, emails, surveys, custom objects, location settings, auth
+- **20 command domains** -- contacts, opportunities, conversations, calendar, workflows, funnels, forms, audit logs, invoices, estimates, products, payments, blog, social, media, emails, surveys, custom objects, location settings, auth
 - **Workflow deep access** -- list, inspect steps, create, clone, delete, publish, add 55+ action types, enroll contacts (internal API, not available in official API)
 - **Funnel and form access** -- list funnels, inspect pages, list forms (internal API)
 - **Chrome extension** for token capture (works on white-label domains)
@@ -172,6 +172,24 @@ ghl-unlocked funnels pages <funnelId>               # List pages in a funnel
 ghl-unlocked forms list                             # List all forms
 ghl-unlocked forms get <id>                         # Form detail
 ```
+
+### Audit Log (Internal API)
+
+Who/what/when changed a record — every tag add/remove, field update, create, and delete, attributed to the exact workflow, integration, or user that did it. The same data as **Settings > Audit Logs** in the GHL UI, but filterable and scriptable. Ideal for troubleshooting "why did this contact get tagged / dropped / overwritten?"
+
+```bash
+ghl-unlocked audit contact <contactId>              # Full change history for one contact (auto-paginated)
+ghl-unlocked audit search --contact <id>            # Same, single page
+ghl-unlocked audit search --id <docId>              # Any document (opportunity, etc.)
+ghl-unlocked audit search                           # Account-wide feed (last 90 days)
+ghl-unlocked audit search --contact <id> --all      # Paginate through everything
+ghl-unlocked audit search --start 2026-05-01T00:00:00Z --end 2026-06-01T00:00:00Z
+ghl-unlocked --json audit contact <id> | jq '.[] | {t:.type, by:.source, sid:.sourceId}'
+```
+
+Each event carries a full `before`/`after` diff, `changedFields`, `source` + `sourceId` (workflow/integration ID), and timestamp — richer than the UI. A contact's document ID is its contact ID.
+
+> **Auth note:** the audit endpoint requires the raw Firebase ID token (not a PIT, not the exchanged session JWT). It uses the same Chrome-extension credential as the workflow commands, minted fresh per run — so if `wf list` works, `audit` works.
 
 ### Invoices
 
@@ -339,7 +357,7 @@ GHL Unlocked uses two APIs:
 | **Public API v2** | `services.leadconnectorhq.com` | PIT (never expires) | Contacts, opps, calendar, invoices, etc. |
 | **Internal API** | `backend.leadconnectorhq.com` | Session JWT (auto-refreshes) | Workflow CRUD, step inspection |
 
-**Most users only need a PIT** -- it covers 16 of 19 command domains. The Chrome extension + JWT is only needed for workflow deep access, funnels, and forms.
+**Most users only need a PIT** -- it covers 16 of 20 command domains. The Chrome extension + Firebase/JWT is only needed for workflow deep access, funnels, forms, and audit logs.
 
 ## Security
 

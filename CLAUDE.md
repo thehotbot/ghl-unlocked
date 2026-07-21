@@ -1,6 +1,6 @@
 # GHL Unlocked
 
-CLI + Chrome extension for full GoHighLevel access. 19 command domains, 100+ operations, 55+ workflow action types. Wraps both the public API v2 and the internal API (for workflow CRUD, funnels, and forms that the public API doesn't expose).
+CLI + Chrome extension for full GoHighLevel access. 20 command domains, 100+ operations, 55+ workflow action types. Wraps both the public API v2 and the internal API (for workflow CRUD, funnels, forms, and audit logs that the public API doesn't expose).
 
 ## Setup
 
@@ -80,6 +80,11 @@ funnels list | get <id> | pages <funnelId>
 
 # Forms (JWT -- internal API)
 forms list | get <id>
+
+# Audit log (Firebase token-id -- internal API)
+audit contact <contactId>            # full change history, auto-paginated
+audit search --contact <id> | --id <docId> | --all
+audit search --start <iso> --end <iso>
 
 # Location (PIT)
 loc get | tags | fields [--model] | values

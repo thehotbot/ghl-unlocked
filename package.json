@@ -1,6 +1,6 @@
 {
   "name": "ghl-unlocked",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Full GHL workflow access for Claude and CLI via internal API",
   "type": "module",
   "bin": {
